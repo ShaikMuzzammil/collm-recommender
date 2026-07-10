@@ -1,0 +1,52 @@
+name: Keep Render Services Awake
+
+on:
+  schedule:
+    # Run every 10 minutes (free GitHub Actions minutes: 2000/month)
+    - cron: '*/10 * * * *'
+  workflow_dispatch:  # Allow manual trigger
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    name: Ping CoLLM Services
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Ping Backend Health
+      id: ping-backend
+      run: |
+        echo "🔔 Pinging backend at $(date)"
+        STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://collm-backend.onrender.com/health || echo "000")
+        echo "status=$STATUS" >> $GITHUB_OUTPUT
+        if [ "$STATUS" = "200" ]; then
+          echo "✅ Backend is healthy"
+        else
+          echo "⚠️ Backend returned status $STATUS - may be waking up"
+        fi
+
+    - name: Ping Frontend
+      id: ping-frontend
+      run: |
+        echo "🔔 Pinging frontend at $(date)"
+        STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://collm-frontend.onrender.com || echo "000")
+        echo "status=$STATUS" >> $GITHUB_OUTPUT
+        if [ "$STATUS" = "200" ]; then
+          echo "✅ Frontend is accessible"
+        else
+          echo "⚠️ Frontend returned status $STATUS - may be waking up"
+        fi
+
+    - name: Summary
+      run: |
+        echo "## 🔔 CoLLM Service Ping Results" >> $GITHUB_STEP_SUMMARY
+        echo "- **Time**: $(date)" >> $GITHUB_STEP_SUMMARY
+        echo "- **Backend Status**: ${{ steps.ping-backend.outputs.status }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Frontend Status**: ${{ steps.ping-frontend.outputs.status }}" >> $GITHUB_STEP_SUMMARY
+        if [ "${{ steps.ping-backend.outputs.status }}" = "200" ] && [ "${{ steps.ping-frontend.outputs.status }}" = "200" ]; then
+          echo "- **Status**: ✅ All services healthy" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "- **Status**: ⚠️ Some services may be sleeping" >> $GITHUB_STEP_SUMMARY
+        fi
