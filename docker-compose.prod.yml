@@ -1,0 +1,38 @@
+version: "3.9"
+
+services:
+  backend:
+    image: ghcr.io/${GITHUB_REPOSITORY}/collm-backend:latest
+    container_name: collm_backend_prod
+    environment:
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - collm_models:/app/models
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 90s
+    restart: always
+    networks:
+      - collm_net
+
+  frontend:
+    image: ghcr.io/${GITHUB_REPOSITORY}/collm-frontend:latest
+    container_name: collm_frontend_prod
+    ports:
+      - "80:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: always
+    networks:
+      - collm_net
+
+volumes:
+  collm_models:
+
+networks:
+  collm_net:
+    driver: bridge

@@ -1,6 +1,6 @@
 MIT License
 
-Copyright (c) 2024 Amrita School of Computing, Chennai
+Copyright (c) 2025 ShaikMuzzammil
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,13 +19,3 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
-
----
-
-ACKNOWLEDGMENT:
-This implementation is based on the research paper:
-"CoLLM: Integrating Collaborative Embeddings into Large Language Models 
-for Recommendation" by Yang Zhang, Fuli Feng, Jizhi Zhang, Keqin Bao, 
-Qifan Wang, and Xiangnan He.
-
-The original paper is available at: arXiv:2310.19488v3 [cs.IR]

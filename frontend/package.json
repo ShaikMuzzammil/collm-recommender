@@ -1,37 +1,36 @@
 {
-  "name": "collm-recommender",
-  "version": "1.0.0",
-  "description": "CoLLM: Integrating Collaborative Embeddings into Large Language Models for Recommendation",
+  "name": "collm-recommender-frontend",
+  "version": "2.0.0",
   "private": true,
+  "description": "CoLLM: LLM + Collaborative Filtering Recommendation UI",
+  "homepage": ".",
   "dependencies": {
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
+    "@testing-library/jest-dom": "^5.17.0",
+    "@testing-library/react": "^13.4.0",
+    "@testing-library/user-event": "^13.5.0",
+    "lucide-react": "^0.383.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
     "react-scripts": "5.0.1",
-    "recharts": "^2.10.3",
-    "lucide-react": "^0.294.0"
+    "recharts": "^2.12.7",
+    "web-vitals": "^2.1.4"
   },
   "scripts": {
-    "start": "react-scripts start",
+    "start": "REACT_APP_API_URL=http://localhost:8000 react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
   },
   "eslintConfig": {
-    "extends": [
-      "react-app"
-    ]
+    "extends": ["react-app", "react-app/jest"],
+    "rules": {
+      "no-unused-vars": "warn",
+      "react-hooks/exhaustive-deps": "warn"
+    }
   },
   "browserslist": {
-    "production": [
-      ">0.2%",
-      "not dead",
-      "not op_mini all"
-    ],
-    "development": [
-      "last 1 chrome version",
-      "last 1 firefox version",
-      "last 1 safari version"
-    ]
+    "production": [">0.2%", "not dead", "not op_mini all"],
+    "development": ["last 1 chrome version", "last 1 firefox version", "last 1 safari version"]
   },
   "proxy": "http://localhost:8000"
 }

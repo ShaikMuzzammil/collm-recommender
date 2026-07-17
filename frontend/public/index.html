@@ -2,20 +2,34 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#0f172a" />
-    <meta
-      name="description"
-      content="CoLLM: Integrating Collaborative Embeddings into Large Language Models for Recommendation"
-    />
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
-    <title>CoLLM Recommender</title>
+    <meta name="description" content="CoLLM: Integrating Collaborative Embeddings into Large Language Models for Recommendation — ML Capstone Project" />
+    <meta property="og:title" content="CoLLM Recommender" />
+    <meta property="og:description" content="LLM + Collaborative Filtering fusion for next-generation recommendations" />
+    <title>CoLLM — LLM Recommender</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+    <style>
+      *, *::before, *::after { box-sizing: border-box; }
+      html, body, #root { height: 100%; margin: 0; padding: 0; }
+      body {
+        background: #0f172a;
+        color: #f8fafc;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+      }
+      code, pre, .mono { font-family: 'JetBrains Mono', 'Courier New', monospace; }
+      ::-webkit-scrollbar { width: 6px; height: 6px; }
+      ::-webkit-scrollbar-track { background: transparent; }
+      ::-webkit-scrollbar-thumb { background: rgba(99,102,241,.35); border-radius: 3px; }
+      ::selection { background: rgba(99,102,241,.35); }
+    </style>
   </head>
   <body>
-    <noscript>You need to enable JavaScript to run this CoLLM application.</noscript>
+    <noscript>CoLLM requires JavaScript to run.</noscript>
     <div id="root"></div>
   </body>
 </html>
