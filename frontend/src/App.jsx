@@ -84,26 +84,11 @@ function useApi() {
   return { call, loading, error };
 }
 
-function useWebSocket(url) {
-  const [msgs, setMsgs]       = useState([]);
-  const [connected, setConn]  = useState(false);
-  const ws = useRef(null);
-
-  const connect = useCallback(() => {
-    try {
-      ws.current = new WebSocket(url);
-      ws.current.onopen  = () => setConn(true);
-      ws.current.onclose = () => setConn(false);
-      ws.current.onmessage = e => {
-        try { setMsgs(prev => [...prev.slice(-99), JSON.parse(e.data)]); }
-        catch {}
-      };
-    } catch { setConn(false); }
-  }, [url]);
-
-  useEffect(() => { connect(); return () => ws.current?.close(); }, [connect]);
-
-  return { msgs, connected, reconnect: connect };
+function useWebSocket(_url) {
+  // Vercel serverless does not support WebSockets.
+  // Training returns full results instantly via HTTP POST /training/start.
+  // This hook is a no-op; Training component handles results directly.
+  return { msgs: [], connected: false, reconnect: () => {} };
 }
 
 /* ─── TINY COMPONENTS ────────────────────────────────────────── */
@@ -731,24 +716,9 @@ function Training() {
   const [bs, setBs]             = useState(64);
   const [status, setStatus]     = useState(null);
   const [history, setHistory]   = useState({ step1:[], step2:[] });
-  const { msgs, connected }     = useWebSocket(WS);
+  useWebSocket(WS); // kept for API compat — no-op on Vercel
 
-  // Sync websocket messages → local history
-  useEffect(() => {
-    if (!msgs.length) return;
-    const last = msgs[msgs.length - 1];
-    if (last.type === 'progress') {
-      setStatus(last);
-      if (last.step === 1) {
-        setHistory(h => ({ ...h, step1: [...h.step1, { epoch:last.epoch, loss:last.loss, val_auc:last.val_auc }] }));
-      } else {
-        setHistory(h => ({ ...h, step2: [...h.step2, { epoch:last.epoch, loss:last.loss, val_auc:last.val_auc }] }));
-      }
-    }
-    if (last.type === 'done') {
-      setHistory({ step1: last.step1 || [], step2: last.step2 || [] });
-    }
-  }, [msgs]);
+  // Training results arrive instantly via HTTP POST — no WebSocket sync needed.
 
   const startTraining = async () => {
     setHistory({ step1:[], step2:[] });
@@ -820,10 +790,8 @@ function Training() {
 
           <Card>
             <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:10 }}>
-              {connected
-                ? <><Wifi size={14} color={C.success} /><span style={{fontSize:12,color:C.success}}>WebSocket Live</span></>
-                : <><WifiOff size={14} color={C.danger} /><span style={{fontSize:12,color:C.danger}}>WebSocket Offline</span></>
-              }
+              <Wifi size={14} color={C.primary} />
+              <span style={{fontSize:12,color:C.primary}}>Serverless Mode — Results instant</span>
             </div>
             {status && (
               <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
