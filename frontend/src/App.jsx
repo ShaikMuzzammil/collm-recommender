@@ -8,10 +8,10 @@ import {
 import {
   Brain, Zap, TrendingUp, Users, BookOpen, Activity,
   ArrowRight, CheckCircle, AlertCircle, Loader, Database,
-  Layers, GitBranch, Cpu, Shield, Sparkles, ChevronRight,
-  Star, Clock, BarChart3, Network, Filter, Play, Download,
-  RefreshCw, Eye, ChevronDown, ChevronUp, Terminal, Wifi,
-  WifiOff, X, Plus, Search, Globe, Award, Box, FlaskConical,
+  Layers, GitBranch, Cpu, Sparkles, ChevronRight,
+  Star, Clock, BarChart3, Network, Filter, Play,
+  RefreshCw, ChevronDown, ChevronUp, Wifi,
+  Globe, Award, Box, FlaskConical,
   Settings, Menu, LayoutDashboard, GitCompare, Telescope
 } from 'lucide-react';
 
@@ -34,8 +34,6 @@ const C = {
   muted:     '#64748b',
   border:    'rgba(99,102,241,0.15)',
 };
-
-const CHART_COLORS = ['#6366f1','#8b5cf6','#f59e0b','#10b981','#ef4444','#3b82f6','#f97316','#ec4899'];
 
 const MODEL_COLORS = {
   'MF':             '#6366f1',
@@ -740,9 +738,6 @@ function Training() {
     setStatus(d);
   };
 
-  const allEpochs = [...(history.step1||[]).map(r=>({...r, phase:'Step 1 (LoRA)'})),
-                    ...(history.step2||[]).map(r=>({...r, phase:'Step 2 (CIE)'}))];
-
   const combLoss = [
     ...(history.step1||[]).map(r=>({ epoch:`S1-${r.epoch}`, step1_loss:r.loss })),
     ...(history.step2||[]).map(r=>({ epoch:`S2-${r.epoch}`, step2_loss:r.loss })),
@@ -1073,7 +1068,6 @@ function ModelComparison() {
           <div style={{ fontSize:11, color:C.muted, marginBottom:8 }}>Toggle Models</div>
           <div style={{ display:'flex', flexWrap:'wrap', gap:6 }}>
             {data.map(d => {
-              const tb = TYPE_BADGE[d.type] || {};
               return (
                 <button key={d.model} onClick={() => toggleModel(d.model)}
                   style={{
