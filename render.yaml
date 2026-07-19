@@ -1,32 +1,22 @@
 services:
-  # ─── Backend ─────────────────────────────────────────────────
   - type: web
     name: collm-backend
     runtime: python
-    region: singapore
-    plan: starter
     rootDir: backend
     buildCommand: pip install -r requirements.txt
     startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
-    healthCheckPath: /health
     envVars:
-      - key: PYTHONUNBUFFERED
-        value: "1"
       - key: PORT
-        value: "10000"
+        value: 8000
+    plan: free
 
-  # ─── Frontend ────────────────────────────────────────────────
   - type: web
     name: collm-frontend
     runtime: node
-    region: singapore
-    plan: starter
     rootDir: frontend
     buildCommand: npm install && npm run build
     staticPublishPath: build
     envVars:
       - key: REACT_APP_API_URL
-        fromService:
-          name: collm-backend
-          type: web
-          property: host
+        value: https://collm-backend.onrender.com
+    plan: free

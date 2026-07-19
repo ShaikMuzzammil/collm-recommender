@@ -1,9 +1,6 @@
 {
-  "version": 2,
-  "framework": "create-react-app",
-  "buildCommand": "npm run build",
-  "outputDirectory": "build",
-  "rewrites": [
-    { "source": "/(.*)", "destination": "/index.html" }
-  ]
+  "rewrites": [{ "source": "/(.*)", "destination": "/" }],
+  "env": {
+    "REACT_APP_API_URL": "https://collm-backend.onrender.com"
+  }
 }
