@@ -137,8 +137,15 @@ training_state: dict = {"running": False, "model": None, "progress": 0,
 # ── FastAPI app ───────────────────────────────────────────────────
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    log.info(f"CoLLM v5 ready — {NUM_USERS} users, {NUM_ITEMS} items, {TOTAL_INTERACTIONS} interactions")
+    log.info("=" * 56)
+    log.info("  CoLLM Backend v5 — starting up")
+    log.info(f"  Users: {NUM_USERS:,}  |  Items: {NUM_ITEMS:,}  |  Interactions: {TOTAL_INTERACTIONS:,}")
+    log.info(f"  Models: {list(MODELS.keys())}")
+    log.info(f"  Endpoints: /ping /health /wake /stats /recommend /items")
+    log.info(f"  Keep-alive: GET /ping  (used by Render healthCheckPath)")
+    log.info("=" * 56)
     yield
+    log.info("CoLLM Backend v5 shut down cleanly.")
 
 app = FastAPI(title="CoLLM API", version="5.0.0", lifespan=lifespan)
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_credentials=False,
@@ -152,6 +159,27 @@ def root(): return {"name": "CoLLM", "version": "5.0.0", "paper": "arXiv:2310.19
 def health(): return {"status": "healthy", "ready": True, "ts": time.time(), "models": list(MODELS.keys())}
 
 # ── Stats ─────────────────────────────────────────────────────────
+
+# ── Ping (keep-alive, used by healthCheckPath + GitHub Actions) ────
+@app.get("/ping")
+def ping():
+    """Ultra-lightweight keep-alive endpoint. Returns in <1ms."""
+    return {"ok": True, "ts": time.time(), "service": "collm-backend"}
+
+@app.get("/wake")
+def wake():
+    """Full wake check — verifies model + data are loaded."""
+    return {
+        "ok": True,
+        "ts": time.time(),
+        "users": NUM_USERS,
+        "items": NUM_ITEMS,
+        "interactions": TOTAL_INTERACTIONS,
+        "models_ready": list(MODELS.keys()),
+        "version": "5.0.0",
+    }
+
+
 @app.get("/stats")
 def stats():
     return {

@@ -11,7 +11,7 @@ import {
   Layers, GitBranch, Cpu, Sparkles, ChevronRight,
   Star, Clock, BarChart3, Network, Filter, Play,
   RefreshCw, Download, FileText, Globe, Award, Box,
-  FlaskConical, Search, X, Table2, Settings, Menu,
+  FlaskConical, Search, X, Settings, Menu,
   LayoutDashboard, GitCompare, Telescope, ShieldCheck,
   Gauge, Package, ChevronLeft, BarChart2, Sigma,
 } from "lucide-react";

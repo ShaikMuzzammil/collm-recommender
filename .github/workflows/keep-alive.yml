@@ -1,52 +1,78 @@
-name: Keep Render Services Awake
+name: 🔔 Keep CoLLM Awake
 
 on:
   schedule:
-    # Run every 10 minutes (free GitHub Actions minutes: 2000/month)
+    # Every 10 minutes — well within GitHub Actions free quota (2,000 min/month)
     - cron: '*/10 * * * *'
-  workflow_dispatch:  # Allow manual trigger
+  workflow_dispatch:
+    inputs:
+      verbose:
+        description: 'Print response bodies'
+        required: false
+        default: 'false'
 
 jobs:
   ping:
+    name: Ping Services
     runs-on: ubuntu-latest
-    name: Ping CoLLM Services
+    timeout-minutes: 3
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Ping backend /ping  (fast warm-up)
+        id: ping
+        run: |
+          echo "🔔 $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+          STATUS=$(curl -sf -o /dev/null -w "%{http_code}" \
+            --max-time 15 \
+            https://collm-backend.onrender.com/ping || echo "000")
+          echo "ping_status=$STATUS" >> $GITHUB_OUTPUT
+          echo "Backend /ping → $STATUS"
 
-    - name: Ping Backend Health
-      id: ping-backend
-      run: |
-        echo "🔔 Pinging backend at $(date)"
-        STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://collm-backend.onrender.com/health || echo "000")
-        echo "status=$STATUS" >> $GITHUB_OUTPUT
-        if [ "$STATUS" = "200" ]; then
-          echo "✅ Backend is healthy"
-        else
-          echo "⚠️ Backend returned status $STATUS - may be waking up"
-        fi
+      - name: Ping backend /health
+        id: health
+        run: |
+          BODY=$(curl -sf --max-time 20 \
+            https://collm-backend.onrender.com/health || echo '{"error":"timeout"}')
+          STATUS=$(curl -sf -o /dev/null -w "%{http_code}" \
+            --max-time 20 \
+            https://collm-backend.onrender.com/health || echo "000")
+          echo "health_status=$STATUS" >> $GITHUB_OUTPUT
+          echo "Backend /health → $STATUS  |  $BODY"
 
-    - name: Ping Frontend
-      id: ping-frontend
-      run: |
-        echo "🔔 Pinging frontend at $(date)"
-        STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://collm-frontend.onrender.com || echo "000")
-        echo "status=$STATUS" >> $GITHUB_OUTPUT
-        if [ "$STATUS" = "200" ]; then
-          echo "✅ Frontend is accessible"
-        else
-          echo "⚠️ Frontend returned status $STATUS - may be waking up"
-        fi
+      - name: Ping backend /wake  (full model check)
+        id: wake
+        run: |
+          BODY=$(curl -sf --max-time 25 \
+            https://collm-backend.onrender.com/wake || echo '{"error":"timeout"}')
+          echo "Backend /wake → $BODY"
 
-    - name: Summary
-      run: |
-        echo "## 🔔 CoLLM Service Ping Results" >> $GITHUB_STEP_SUMMARY
-        echo "- **Time**: $(date)" >> $GITHUB_STEP_SUMMARY
-        echo "- **Backend Status**: ${{ steps.ping-backend.outputs.status }}" >> $GITHUB_STEP_SUMMARY
-        echo "- **Frontend Status**: ${{ steps.ping-frontend.outputs.status }}" >> $GITHUB_STEP_SUMMARY
-        if [ "${{ steps.ping-backend.outputs.status }}" = "200" ] && [ "${{ steps.ping-frontend.outputs.status }}" = "200" ]; then
-          echo "- **Status**: ✅ All services healthy" >> $GITHUB_STEP_SUMMARY
-        else
-          echo "- **Status**: ⚠️ Some services may be sleeping" >> $GITHUB_STEP_SUMMARY
-        fi
+      - name: Ping frontend
+        id: frontend
+        run: |
+          STATUS=$(curl -sf -o /dev/null -w "%{http_code}" \
+            --max-time 15 \
+            https://collm-frontend.onrender.com || echo "000")
+          echo "frontend_status=$STATUS" >> $GITHUB_OUTPUT
+          echo "Frontend → $STATUS"
+
+      - name: Summary
+        if: always()
+        run: |
+          B="${{ steps.health.outputs.health_status }}"
+          F="${{ steps.frontend.outputs.frontend_status }}"
+          echo "## 🔔 CoLLM Keep-Alive — $(date -u '+%Y-%m-%d %H:%M UTC')" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Service | Status | Result |" >> $GITHUB_STEP_SUMMARY
+          echo "|---------|--------|--------|" >> $GITHUB_STEP_SUMMARY
+          if [ "$B" = "200" ]; then
+            echo "| Backend  | $B | ✅ Healthy |" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "| Backend  | $B | ⚠️ Check logs |" >> $GITHUB_STEP_SUMMARY
+          fi
+          if [ "$F" = "200" ]; then
+            echo "| Frontend | $F | ✅ Healthy |" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "| Frontend | $F | ⚠️ Check logs |" >> $GITHUB_STEP_SUMMARY
+          fi
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "_Next ping in ~10 minutes_" >> $GITHUB_STEP_SUMMARY

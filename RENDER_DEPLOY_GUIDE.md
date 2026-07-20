@@ -1,3 +1,18 @@
+## ✅ v5 Build Fix Applied
+
+**Problem fixed:** Render was auto-selecting Python 3.14.3 which has no prebuilt
+wheel for `pydantic-core==2.18.4`, causing a Rust compile failure.
+
+**What was added:**
+- `backend/runtime.txt` → forces Python **3.11.9** (stable, all wheels available)
+- `requirements.txt` → pinned `pydantic-core==2.18.4` explicitly
+- `render.yaml` → added `healthCheckPath: /ping` + `buildCommand: pip install --upgrade pip && ...`
+- `backend/main.py` → added `/ping` and `/wake` endpoints
+- `scripts/ping_render.py` → upgraded v2 with `--loop` and `--check` modes
+- `.github/workflows/keep-alive.yml` → hardened to ping /ping + /health + /wake + frontend
+
+---
+
 # 🚀 Complete Render.com Deployment Guide - CoLLM
 
 > **Goal**: Deploy CoLLM full-stack app on Render free tier with 24/7 uptime using self-ping
