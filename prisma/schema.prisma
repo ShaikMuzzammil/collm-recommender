@@ -1,0 +1,210 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model User {
+  id              String            @id @default(cuid())
+  name            String?
+  email           String            @unique
+  emailVerified   DateTime?
+  image           String?
+  password        String?
+  role            String            @default("user")
+  organization    String?
+  bio             String?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  accounts        Account[]
+  sessions        Session[]
+  trainingJobs    TrainingJob[]
+  evaluations     Evaluation[]
+  recommendations RecommendationLog[]
+  exports         ExportRecord[]
+  workspaceFiles  WorkspaceFile[]
+  contactMessages ContactMessage[]
+  apiKeys         ApiKey[]
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+  @@unique([identifier, token])
+}
+
+model TrainingJob {
+  id              String   @id @default(cuid())
+  userId          String
+  name            String
+  dataset         String
+  collabModel     String
+  llmBackbone     String   @default("vicuna-7b")
+  collabDim       Int      @default(64)
+  loraR           Int      @default(8)
+  loraAlpha       Int      @default(16)
+  status          String   @default("queued")
+  currentStep     String?
+  progress        Float    @default(0)
+  trainLoss       Float?
+  valAuc          Float?
+  bestValAuc      Float?
+  finalAuc        Float?
+  finalUauc       Float?
+  finalNdcg       Float?
+  gpuCount        Int      @default(1)
+  elapsedSeconds  Int      @default(0)
+  logs            String?
+  errorMessage    String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  completedAt     DateTime?
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Evaluation {
+  id            String   @id @default(cuid())
+  userId        String
+  modelId       String
+  modelName     String
+  dataset       String
+  split         String   @default("test")
+  aucOverall    Float?
+  uaucOverall   Float?
+  ndcgOverall   Float?
+  aucWarm       Float?
+  uaucWarm      Float?
+  ndcgWarm      Float?
+  aucCold       Float?
+  uaucCold      Float?
+  ndcgCold      Float?
+  latencyMs     Float?
+  sampleCount   Int?
+  status        String   @default("pending")
+  createdAt     DateTime @default(now())
+  completedAt   DateTime?
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model RecommendationLog {
+  id              String   @id @default(cuid())
+  userId          String
+  targetUserId    String
+  targetItemId    String
+  itemTitle       String?
+  modelUsed       String
+  score           Float
+  label           String
+  confidence      String?
+  collabSignal    Float?
+  semanticSignal  Float?
+  latencyMs       Float?
+  createdAt       DateTime @default(now())
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model ExportRecord {
+  id          String   @id @default(cuid())
+  userId      String
+  type        String
+  format      String
+  filename    String
+  fileSize    Int?
+  dataSource  String?
+  emailSent   Boolean  @default(false)
+  emailTo     String?
+  downloadUrl String?
+  metadata    String?
+  createdAt   DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model WorkspaceFile {
+  id          String   @id @default(cuid())
+  userId      String
+  filename    String
+  originalName String
+  mimeType    String
+  size        Int
+  url         String
+  category    String   @default("general")
+  description String?
+  tags        String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model ContactMessage {
+  id        String   @id @default(cuid())
+  userId    String?
+  name      String
+  email     String
+  subject   String
+  message   String
+  category  String   @default("general")
+  status    String   @default("new")
+  repliedAt DateTime?
+  createdAt DateTime @default(now())
+  user      User?    @relation(fields: [userId], references: [id])
+}
+
+model ApiKey {
+  id          String   @id @default(cuid())
+  userId      String
+  name        String
+  keyHash     String   @unique
+  keyPrefix   String
+  permissions String   @default("read,recommend")
+  lastUsedAt  DateTime?
+  expiresAt   DateTime?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Dataset {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  description String?
+  trainCount  Int
+  validCount  Int
+  testCount   Int
+  userCount   Int
+  itemCount   Int
+  avgRating   Float?
+  sparsity    Float?
+  isPublic    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+}
