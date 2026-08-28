@@ -14,12 +14,12 @@ model Account {
   type              String
   provider          String
   providerAccountId String
-  refresh_token     String?
-  access_token      String?
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
   expires_at        Int?
   token_type        String?
   scope             String?
-  id_token          String?
+  id_token          String? @db.Text
   session_state     String?
   user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
   @@unique([provider, providerAccountId])
@@ -34,17 +34,17 @@ model Session {
 }
 
 model User {
-  id              String            @id @default(cuid())
+  id              String              @id @default(cuid())
   name            String?
-  email           String            @unique
+  email           String              @unique
   emailVerified   DateTime?
   image           String?
   password        String?
-  role            String            @default("user")
+  role            String              @default("user")
   organization    String?
   bio             String?
-  createdAt       DateTime          @default(now())
-  updatedAt       DateTime          @updatedAt
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
   accounts        Account[]
   sessions        Session[]
   trainingJobs    TrainingJob[]
@@ -64,73 +64,73 @@ model VerificationToken {
 }
 
 model TrainingJob {
-  id              String   @id @default(cuid())
-  userId          String
-  name            String
-  dataset         String
-  collabModel     String
-  llmBackbone     String   @default("vicuna-7b")
-  collabDim       Int      @default(64)
-  loraR           Int      @default(8)
-  loraAlpha       Int      @default(16)
-  status          String   @default("queued")
-  currentStep     String?
-  progress        Float    @default(0)
-  trainLoss       Float?
-  valAuc          Float?
-  bestValAuc      Float?
-  finalAuc        Float?
-  finalUauc       Float?
-  finalNdcg       Float?
-  gpuCount        Int      @default(1)
-  elapsedSeconds  Int      @default(0)
-  logs            String?
-  errorMessage    String?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  completedAt     DateTime?
-  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id             String    @id @default(cuid())
+  userId         String
+  name           String
+  dataset        String
+  collabModel    String
+  llmBackbone    String    @default("vicuna-7b")
+  collabDim      Int       @default(64)
+  loraR          Int       @default(8)
+  loraAlpha      Int       @default(16)
+  status         String    @default("queued")
+  currentStep    String?
+  progress       Float     @default(0)
+  trainLoss      Float?
+  valAuc         Float?
+  bestValAuc     Float?
+  finalAuc       Float?
+  finalUauc      Float?
+  finalNdcg      Float?
+  gpuCount       Int       @default(1)
+  elapsedSeconds Int       @default(0)
+  logs           String?   @db.Text
+  errorMessage   String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  completedAt    DateTime?
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Evaluation {
-  id            String   @id @default(cuid())
-  userId        String
-  modelId       String
-  modelName     String
-  dataset       String
-  split         String   @default("test")
-  aucOverall    Float?
-  uaucOverall   Float?
-  ndcgOverall   Float?
-  aucWarm       Float?
-  uaucWarm      Float?
-  ndcgWarm      Float?
-  aucCold       Float?
-  uaucCold      Float?
-  ndcgCold      Float?
-  latencyMs     Float?
-  sampleCount   Int?
-  status        String   @default("pending")
-  createdAt     DateTime @default(now())
-  completedAt   DateTime?
-  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id          String    @id @default(cuid())
+  userId      String
+  modelId     String
+  modelName   String
+  dataset     String
+  split       String    @default("test")
+  aucOverall  Float?
+  uaucOverall Float?
+  ndcgOverall Float?
+  aucWarm     Float?
+  uaucWarm    Float?
+  ndcgWarm    Float?
+  aucCold     Float?
+  uaucCold    Float?
+  ndcgCold    Float?
+  latencyMs   Float?
+  sampleCount Int?
+  status      String    @default("pending")
+  createdAt   DateTime  @default(now())
+  completedAt DateTime?
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model RecommendationLog {
-  id              String   @id @default(cuid())
-  userId          String
-  targetUserId    String
-  targetItemId    String
-  itemTitle       String?
-  modelUsed       String
-  score           Float
-  label           String
-  confidence      String?
-  collabSignal    Float?
-  semanticSignal  Float?
-  latencyMs       Float?
-  createdAt       DateTime @default(now())
-  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id             String   @id @default(cuid())
+  userId         String
+  targetUserId   String
+  targetItemId   String
+  itemTitle      String?
+  modelUsed      String
+  score          Float
+  label          String
+  confidence     String?
+  collabSignal   Float?
+  semanticSignal Float?
+  latencyMs      Float?
+  createdAt      DateTime @default(now())
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model ExportRecord {
@@ -144,53 +144,53 @@ model ExportRecord {
   emailSent   Boolean  @default(false)
   emailTo     String?
   downloadUrl String?
-  metadata    String?
+  metadata    String?  @db.Text
   createdAt   DateTime @default(now())
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model WorkspaceFile {
-  id          String   @id @default(cuid())
-  userId      String
-  filename    String
+  id           String   @id @default(cuid())
+  userId       String
+  filename     String
   originalName String
-  mimeType    String
-  size        Int
-  url         String
-  category    String   @default("general")
-  description String?
-  tags        String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  mimeType     String
+  size         Int
+  url          String   @db.Text
+  category     String   @default("general")
+  description  String?
+  tags         String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model ContactMessage {
-  id        String   @id @default(cuid())
+  id        String    @id @default(cuid())
   userId    String?
   name      String
   email     String
   subject   String
-  message   String
-  category  String   @default("general")
-  status    String   @default("new")
+  message   String    @db.Text
+  category  String    @default("general")
+  status    String    @default("new")
   repliedAt DateTime?
-  createdAt DateTime @default(now())
-  user      User?    @relation(fields: [userId], references: [id])
+  createdAt DateTime  @default(now())
+  user      User?     @relation(fields: [userId], references: [id])
 }
 
 model ApiKey {
-  id          String   @id @default(cuid())
+  id          String    @id @default(cuid())
   userId      String
   name        String
-  keyHash     String   @unique
+  keyHash     String    @unique
   keyPrefix   String
-  permissions String   @default("read,recommend")
+  permissions String    @default("read,recommend")
   lastUsedAt  DateTime?
   expiresAt   DateTime?
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Dataset {
