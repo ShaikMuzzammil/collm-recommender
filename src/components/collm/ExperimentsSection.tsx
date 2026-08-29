@@ -11,7 +11,8 @@ import { useStore, type DatasetId } from '@/lib/store';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, RadarChart, PolarGrid, PolarAngleAxis, Radar } from 'recharts';
 import { motion } from 'framer-motion';
-import { FlaskConical, Thermometer, Puzzle, Clock, Snowflake, Sun, ArrowUpRight, TrendingUp } from 'lucide-react';
+import { FlaskConical, Thermometer, Puzzle, Clock, Snowflake, Sun, ArrowUpRight, TrendingUp, FileJson } from 'lucide-react';
+import { toast } from 'sonner';
 
 function BestValue({ value, isBest }: { value: string | number; isBest: boolean }) {
   return (
@@ -38,8 +39,26 @@ export default function ExperimentsSection() {
     inferTime: parseFloat(e.inferTime),
   }));
 
+  const exportExperiments = () => {
+    const blob = new Blob([JSON.stringify({ dataset: selectedDataset, results, warmCold, ablation: ablationResults }, null, 2)], { type: 'application/json' });
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+    a.download = `experiments-${selectedDataset}-${new Date().toISOString().slice(0, 10)}.json`; a.click();
+    toast.success('Experiment data exported');
+  };
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 p-6">
+      <div className="flex items-center justify-between flex-wrap gap-2">
+        <div>
+          <h2 className="text-xl font-bold flex items-center gap-2">
+            <FlaskConical className="size-5 text-emerald-500" />Experiments & Ablation
+          </h2>
+          <p className="text-muted-foreground text-sm">Model comparisons, warm/cold analysis, hyperparameter sensitivity, efficiency metrics</p>
+        </div>
+        <Button variant="outline" size="sm" onClick={exportExperiments}>
+          <FileJson className="size-3.5 mr-1.5" />Export Results
+        </Button>
+      </div>
       <Tabs defaultValue="results" className="space-y-4">
         <TabsList className="flex-wrap">
           <TabsTrigger value="results" className="gap-1.5"><FlaskConical className="size-3.5" /> Results</TabsTrigger>

@@ -6,7 +6,7 @@ import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { motion } from "framer-motion";
-import { BrainCircuit, Mail, Lock, User, Building2, Eye, EyeOff, CheckCircle, Loader2 } from "lucide-react";
+import { BrainCircuit, Mail, Lock, User, Building2, Eye, EyeOff, CheckCircle, Loader2, LayoutDashboard } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -140,10 +140,16 @@ export default function SignUpPage() {
               </Button>
             </form>
 
-            <p className="text-center text-sm text-muted-foreground mt-5">
-              Already have an account?{" "}
-              <Link href="/sign-in" className="text-emerald-500 hover:text-emerald-400 font-medium">Sign in</Link>
-            </p>
+            <div className="mt-5 space-y-2">
+              <p className="text-center text-sm text-muted-foreground">
+                Already have an account?{" "}
+                <Link href="/sign-in" className="text-emerald-500 hover:text-emerald-400 font-medium">Sign in</Link>
+              </p>
+              <Link href="/" className="flex items-center justify-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
+                <LayoutDashboard className="size-4" />
+                Go to Dashboard (explore without signing in)
+              </Link>
+            </div>
           </div>
         </motion.div>
       </div>

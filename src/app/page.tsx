@@ -6,7 +6,7 @@ import Link from "next/link";
 import {
   BrainCircuit, LayoutDashboard, Network, Box, FlaskConical, Zap, Database,
   Download, Code2, Cpu, BarChart3, FolderOpen, MessageSquare, ChevronLeft,
-  ChevronRight, Menu, LogOut, User, Settings, Moon, Sun, Activity, Bell, Github,
+  ChevronRight, Menu, LogOut, User, Settings, Moon, Sun, Activity, Bell, Github, BookOpen,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -25,6 +25,7 @@ import AnalyticsSection from "@/components/collm/AnalyticsSection";
 import WorkspaceSection from "@/components/collm/WorkspaceSection";
 import ExportSection from "@/components/collm/ExportSection";
 import ContactSection from "@/components/collm/ContactSection";
+import GuideSection from "@/components/collm/GuideSection";
 
 // Lazy-loaded existing sections
 import dynamic from "next/dynamic";
@@ -51,6 +52,7 @@ const NAV_ITEMS: NavItem[] = [
   { id: "export",       label: "Export & Reports",icon: Download,        group: "data" },
   { id: "api-docs",     label: "API Docs",        icon: Code2,           group: "dev" },
   { id: "contact",      label: "Contact",         icon: MessageSquare,   group: "dev" },
+  { id: "guide",        label: "Guide & Help",    icon: BookOpen,        group: "dev" },
 ];
 
 const GROUPS: Record<string, string> = {
@@ -71,6 +73,7 @@ const SECTION_MAP: Record<TabId, React.ComponentType> = {
   export: ExportSection,
   "api-docs": ApiDocsSection as any,
   contact: ContactSection,
+  guide: GuideSection,
 };
 
 export default function HomePage() {

@@ -176,7 +176,7 @@ export default function DashboardSection() {
               { label: "Export PDF", tab: "export" as const, icon: BarChart3, color: "text-red-400" },
               { label: "Browse Datasets", tab: "datasets" as const, icon: Database, color: "text-purple-400" },
               { label: "Analytics", tab: "analytics" as const, icon: Activity, color: "text-amber-400" },
-              { label: "Contact Team", tab: "contact" as const, icon: BookOpen, color: "text-pink-400" },
+              { label: "Guide & Help", tab: "guide" as const, icon: BookOpen, color: "text-pink-400" },
             ].map(a => (
               <button key={a.label} onClick={() => setActiveTab(a.tab)}
                 className="w-full flex items-center gap-3 p-2.5 rounded-lg hover:bg-secondary/60 transition-colors text-left group">

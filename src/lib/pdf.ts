@@ -1,234 +1,197 @@
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
-export interface PdfReportConfig {
+export interface GenerateReportOptions {
   title: string;
   subtitle: string;
   dataset: string;
   model: string;
-  generatedBy: string;
-  generatedAt: string;
-  sections: PdfSection[];
+  generatedBy?: string;
+  metrics: Record<string, number>;
 }
 
-export interface PdfSection {
-  heading: string;
-  description?: string;
-  table?: { headers: string[]; rows: (string | number)[][] };
-  keyValues?: Record<string, string | number>;
-}
+const EM = [16, 185, 129] as [number, number, number];
+const DARK = [15, 23, 42] as [number, number, number];
+const SLATE = [30, 41, 59] as [number, number, number];
+const MID = [71, 85, 105] as [number, number, number];
+const WHITE = [255, 255, 255] as [number, number, number];
+const LIGHT = [148, 163, 184] as [number, number, number];
 
-const BRAND = {
-  emerald: [16, 185, 129] as [number, number, number],
-  emeraldDark: [5, 78, 59] as [number, number, number],
-  dark: [15, 23, 42] as [number, number, number],
-  slate: [30, 41, 59] as [number, number, number],
-  white: [255, 255, 255] as [number, number, number],
-  lightGray: [148, 163, 184] as [number, number, number],
-  border: [51, 65, 85] as [number, number, number],
-};
-
-export function generateCoLLMReport(config: PdfReportConfig): jsPDF {
+export function generateCoLLMReport(opts: GenerateReportOptions): jsPDF {
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
   const W = doc.internal.pageSize.getWidth();
+  const H = doc.internal.pageSize.getHeight();
+  const now = new Date();
 
-  // === HEADER BACKGROUND ===
-  doc.setFillColor(...BRAND.dark);
-  doc.rect(0, 0, W, 297, "F");
+  // === HEADER ===
+  doc.setFillColor(...DARK);
+  doc.rect(0, 0, W, 52, "F");
 
-  // Header gradient band
-  doc.setFillColor(...BRAND.emeraldDark);
-  doc.rect(0, 0, W, 55, "F");
+  // Green left accent bar
+  doc.setFillColor(...EM);
+  doc.rect(0, 0, 4, 52, "F");
 
-  // Accent bar
-  doc.setFillColor(...BRAND.emerald);
-  doc.rect(0, 52, W, 3, "F");
-
-  // Logo box
-  doc.setFillColor(...BRAND.emerald);
-  doc.roundedRect(12, 8, 22, 22, 3, 3, "F");
-  doc.setTextColor(...BRAND.dark);
-  doc.setFontSize(14);
+  // Logo circle
+  doc.setFillColor(22, 101, 52);
+  doc.circle(22, 26, 10, "F");
+  doc.setTextColor(...EM);
+  doc.setFontSize(16);
   doc.setFont("helvetica", "bold");
-  doc.text("C", 16, 19);
-  doc.setFontSize(8);
-  doc.text("LLM", 21, 19);
+  doc.text("C", 19, 30);
 
-  // Brand name
-  doc.setTextColor(...BRAND.emerald);
+  // Title block
+  doc.setTextColor(...EM);
   doc.setFontSize(8);
   doc.setFont("helvetica", "bold");
-  doc.text("CoLLM PLATFORM", 38, 14);
-  doc.setTextColor(...BRAND.lightGray);
+  doc.text("CoLLM RESEARCH PLATFORM", 38, 16);
+  doc.setTextColor(...WHITE);
+  doc.setFontSize(15);
+  doc.text(opts.title, 38, 25);
+  doc.setTextColor(...LIGHT);
+  doc.setFontSize(8);
+  doc.text(opts.subtitle, 38, 32);
+
+  // Stamp
+  const stampX = W - 48;
+  doc.setDrawColor(...EM);
+  doc.setLineWidth(0.8);
+  doc.roundedRect(stampX, 10, 38, 32, 3, 3, "S");
+  doc.setTextColor(...EM);
   doc.setFontSize(7);
-  doc.setFont("helvetica", "normal");
-  doc.text("Collaborative LLM for Recommendation", 38, 19);
-  doc.text("arXiv:2310.19488v3  |  USTC Research", 38, 24);
-
-  // Report title
-  doc.setTextColor(...BRAND.white);
-  doc.setFontSize(18);
   doc.setFont("helvetica", "bold");
-  doc.text(config.title, 14, 40);
-
-  doc.setTextColor(...BRAND.emerald);
-  doc.setFontSize(9);
-  doc.setFont("helvetica", "normal");
-  doc.text(config.subtitle, 14, 47);
-
-  // Page stamp (top right)
-  doc.setTextColor(...BRAND.lightGray);
+  doc.text("OFFICIAL REPORT", stampX + 19, 17, { align: "center" });
+  doc.setDrawColor(...EM);
+  doc.line(stampX + 4, 19, stampX + 34, 19);
+  doc.setTextColor(...LIGHT);
+  doc.setFontSize(6);
+  doc.text(`ID: CR-${Date.now().toString(36).toUpperCase()}`, stampX + 19, 23, { align: "center" });
+  doc.text(now.toLocaleDateString("en-GB"), stampX + 19, 27, { align: "center" });
+  doc.text(opts.model, stampX + 19, 31, { align: "center" });
+  doc.setTextColor(...EM);
   doc.setFontSize(7);
-  doc.text("OFFICIAL RESEARCH REPORT", W - 14, 12, { align: "right" });
-  doc.text(`Generated: ${config.generatedAt}`, W - 14, 17, { align: "right" });
-  doc.text(`By: ${config.generatedBy}`, W - 14, 22, { align: "right" });
+  doc.text("✓ VERIFIED", stampX + 19, 38, { align: "center" });
 
-  // Watermark stamp circle
-  doc.setDrawColor(...BRAND.emerald);
-  doc.setLineWidth(0.5);
-  doc.circle(W - 20, 38, 10);
-  doc.setTextColor(...BRAND.emerald);
-  doc.setFontSize(5);
-  doc.setFont("helvetica", "bold");
-  doc.text("CoLLM", W - 20, 37, { align: "center" });
-  doc.text("VERIFIED", W - 20, 41, { align: "center" });
+  let y = 62;
 
-  // Meta info row
-  let y = 63;
-  const metaItems = [
-    { label: "Dataset", value: config.dataset },
-    { label: "Model", value: config.model },
-    { label: "Format", value: "Research Grade" },
+  // === METADATA BAR ===
+  doc.setFillColor(...SLATE);
+  doc.roundedRect(14, y - 6, W - 28, 22, 3, 3, "F");
+  const metas = [
+    { label: "Model", val: opts.model },
+    { label: "Dataset", val: opts.dataset },
+    { label: "Generated By", val: opts.generatedBy ?? "CoLLM User" },
+    { label: "Date", val: now.toLocaleDateString() },
   ];
-
-  doc.setFontSize(7);
-  const boxW = (W - 28) / metaItems.length;
-  metaItems.forEach((item, i) => {
-    const bx = 14 + i * (boxW + 2);
-    doc.setFillColor(...BRAND.slate);
-    doc.roundedRect(bx, y, boxW, 14, 2, 2, "F");
-    doc.setDrawColor(...BRAND.border);
-    doc.setLineWidth(0.3);
-    doc.roundedRect(bx, y, boxW, 14, 2, 2, "S");
-    doc.setTextColor(...BRAND.lightGray);
+  const mw = (W - 28) / metas.length;
+  metas.forEach((m, i) => {
+    const mx = 18 + i * mw;
+    doc.setTextColor(...LIGHT);
+    doc.setFontSize(7);
     doc.setFont("helvetica", "normal");
-    doc.text(item.label.toUpperCase(), bx + 4, y + 5);
-    doc.setTextColor(...BRAND.emerald);
-    doc.setFont("helvetica", "bold");
-    doc.text(item.value, bx + 4, y + 11);
-  });
-
-  y = 84;
-
-  // === SECTIONS ===
-  config.sections.forEach((section, sIdx) => {
-    // Section check: if near bottom add new page
-    if (y > 250) {
-      doc.addPage();
-      doc.setFillColor(...BRAND.dark);
-      doc.rect(0, 0, W, 297, "F");
-      y = 20;
-    }
-
-    // Section heading
-    doc.setFillColor(...BRAND.emeraldDark);
-    doc.roundedRect(14, y, W - 28, 9, 1, 1, "F");
-    doc.setTextColor(...BRAND.emerald);
+    doc.text(m.label.toUpperCase(), mx, y + 1);
+    doc.setTextColor(...WHITE);
     doc.setFontSize(8.5);
     doc.setFont("helvetica", "bold");
-    doc.text(`${sIdx + 1}. ${section.heading.toUpperCase()}`, 18, y + 6);
-    y += 13;
-
-    if (section.description) {
-      doc.setTextColor(...BRAND.lightGray);
-      doc.setFontSize(8);
-      doc.setFont("helvetica", "normal");
-      const lines = doc.splitTextToSize(section.description, W - 28);
-      doc.text(lines, 14, y);
-      y += lines.length * 5 + 3;
-    }
-
-    if (section.keyValues) {
-      const entries = Object.entries(section.keyValues);
-      entries.forEach(([k, v], ki) => {
-        const row = Math.floor(ki / 3);
-        const col = ki % 3;
-        const kbw = (W - 28) / 3 - 2;
-        const kbx = 14 + col * (kbw + 3);
-        const kby = y + row * 18;
-        if (y + row * 18 > 260) return;
-        doc.setFillColor(...BRAND.slate);
-        doc.roundedRect(kbx, kby, kbw, 14, 1.5, 1.5, "F");
-        doc.setDrawColor(...BRAND.border);
-        doc.setLineWidth(0.2);
-        doc.roundedRect(kbx, kby, kbw, 14, 1.5, 1.5, "S");
-        doc.setTextColor(...BRAND.lightGray);
-        doc.setFontSize(6.5);
-        doc.setFont("helvetica", "normal");
-        doc.text(k, kbx + 3, kby + 5);
-        doc.setTextColor(...BRAND.emerald);
-        doc.setFontSize(9);
-        doc.setFont("helvetica", "bold");
-        doc.text(String(v), kbx + 3, kby + 11);
-      });
-      const rows = Math.ceil(entries.length / 3);
-      y += rows * 18 + 4;
-    }
-
-    if (section.table) {
-      autoTable(doc, {
-        head: [section.table.headers],
-        body: section.table.rows,
-        startY: y,
-        margin: { left: 14, right: 14 },
-        styles: {
-          fontSize: 7.5,
-          cellPadding: 3.5,
-          textColor: [226, 232, 240],
-          fillColor: [30, 41, 59],
-          lineColor: [51, 65, 85],
-          lineWidth: 0.2,
-        },
-        headStyles: {
-          fillColor: BRAND.slate,
-          textColor: BRAND.emerald,
-          fontStyle: "bold",
-          fontSize: 7,
-        },
-        alternateRowStyles: { fillColor: [15, 23, 42] },
-        didParseCell: (data) => {
-          if (data.section === "body") {
-            const cellVal = String(data.cell.raw);
-            if (cellVal.startsWith("CoLLM") || cellVal.includes("Best")) {
-              data.cell.styles.textColor = BRAND.emerald;
-              data.cell.styles.fontStyle = "bold";
-            }
-          }
-        },
-      });
-      y = (doc as any).lastAutoTable.finalY + 10;
-    }
-
-    y += 4;
+    doc.text(m.val, mx, y + 8);
   });
 
-  // === FOOTER ===
-  const totalPages = doc.getNumberOfPages();
-  for (let p = 1; p <= totalPages; p++) {
-    doc.setPage(p);
-    const pageH = doc.internal.pageSize.getHeight();
-    doc.setFillColor(...BRAND.slate);
-    doc.rect(0, pageH - 14, W, 14, "F");
-    doc.setDrawColor(...BRAND.emerald);
-    doc.setLineWidth(0.4);
-    doc.line(0, pageH - 14, W, pageH - 14);
-    doc.setTextColor(...BRAND.lightGray);
+  y += 26;
+
+  // === SECTION: KEY METRICS ===
+  doc.setFillColor(...EM);
+  doc.rect(14, y, 3, 7, "F");
+  doc.setTextColor(...WHITE);
+  doc.setFontSize(11);
+  doc.setFont("helvetica", "bold");
+  doc.text("Key Metrics", 20, y + 5.5);
+  y += 12;
+
+  const metricKeys = Object.keys(opts.metrics);
+  const boxW = (W - 28 - (metricKeys.length - 1) * 4) / metricKeys.length;
+  metricKeys.forEach((key, i) => {
+    const bx = 14 + i * (boxW + 4);
+    doc.setFillColor(...SLATE);
+    doc.roundedRect(bx, y, boxW, 22, 2, 2, "F");
+    doc.setFillColor(...EM);
+    doc.roundedRect(bx, y + 18, boxW, 4, 0, 0, "F");
+    const val = opts.metrics[key];
+    doc.setTextColor(...EM);
+    doc.setFontSize(14);
+    doc.setFont("helvetica", "bold");
+    doc.text(val.toFixed(4), bx + boxW / 2, y + 12, { align: "center" });
+    doc.setTextColor(...LIGHT);
     doc.setFontSize(6.5);
     doc.setFont("helvetica", "normal");
-    doc.text("CoLLM Platform — Collaborative LLM Research Report", 14, pageH - 5);
-    doc.text(`Page ${p} of ${totalPages}`, W - 14, pageH - 5, { align: "right" });
-    doc.text("CONFIDENTIAL — FOR RESEARCH PURPOSES ONLY", W / 2, pageH - 5, { align: "center" });
-  }
+    doc.text(key, bx + boxW / 2, y + 7, { align: "center" });
+  });
+  y += 30;
+
+  // === SECTION: FULL METRICS TABLE ===
+  doc.setFillColor(...EM);
+  doc.rect(14, y, 3, 7, "F");
+  doc.setTextColor(...WHITE);
+  doc.setFontSize(11);
+  doc.setFont("helvetica", "bold");
+  doc.text("Full Metrics Breakdown", 20, y + 5.5);
+  y += 10;
+
+  const m = opts.metrics;
+  autoTable(doc, {
+    startY: y,
+    margin: { left: 14, right: 14 },
+    head: [["Scenario", "AUC", "UAUC", "NDCG"]],
+    body: [
+      ["Overall", m["AUC (Overall)"]?.toFixed(4) ?? "—", m["UAUC (Overall)"]?.toFixed(4) ?? "—", m["NDCG (Overall)"]?.toFixed(4) ?? "—"],
+      ["Warm-Start Users (>10 interactions)", m["AUC (Warm)"]?.toFixed(4) ?? "—", m["UAUC (Warm)"]?.toFixed(4) ?? "—", m["NDCG (Warm)"]?.toFixed(4) ?? "—"],
+      ["Cold-Start Users (≤10 interactions)", m["AUC (Cold)"]?.toFixed(4) ?? "—", m["UAUC (Cold)"]?.toFixed(4) ?? "—", m["NDCG (Cold)"]?.toFixed(4) ?? "—"],
+    ],
+    headStyles: { fillColor: DARK, textColor: EM, fontStyle: "bold", fontSize: 8 },
+    bodyStyles: { fillColor: SLATE, textColor: WHITE, fontSize: 8 },
+    alternateRowStyles: { fillColor: [24, 34, 56] },
+    tableLineColor: [51, 65, 85],
+    tableLineWidth: 0.2,
+  });
+
+  y = (doc as any).lastAutoTable.finalY + 10;
+
+  // === SECTION: METHODOLOGY ===
+  doc.setFillColor(...EM);
+  doc.rect(14, y, 3, 7, "F");
+  doc.setTextColor(...WHITE);
+  doc.setFontSize(11);
+  doc.setFont("helvetica", "bold");
+  doc.text("Methodology", 20, y + 5.5);
+  y += 12;
+
+  doc.setFillColor(...SLATE);
+  doc.roundedRect(14, y, W - 28, 42, 2, 2, "F");
+  doc.setTextColor(...LIGHT);
+  doc.setFontSize(8);
+  doc.setFont("helvetica", "normal");
+  const methodLines = [
+    `Model: ${opts.model} on ${opts.dataset} benchmark dataset.`,
+    "Pipeline: Two-step CoLLM training — collaborative pre-training (CIE module) followed by LoRA LLM fine-tuning.",
+    "CIE Module: Produces 64-dimensional user/item collaborative embeddings injected as soft tokens into the LLM prompt.",
+    "LLM Backbone: Vicuna-7B with LoRA adapters (rank r=8, α=16). Two-phase: freeze backbone → full fine-tune.",
+    "Evaluation: Leave-one-out split. Cold users: ≤10 interactions. Warm users: >10 interactions.",
+    "Paper: CoLLM: Integrating Collaborative Embeddings into LLMs for Recommendation (arXiv:2310.19488v3)",
+  ];
+  methodLines.forEach((line, i) => {
+    doc.text(`• ${line}`, 18, y + 6 + i * 6, { maxWidth: W - 36 });
+  });
+
+  y += 50;
+
+  // === FOOTER ===
+  doc.setFillColor(...DARK);
+  doc.rect(0, H - 18, W, 18, "F");
+  doc.setFillColor(...EM);
+  doc.rect(0, H - 18, W, 1.5, "F");
+  doc.setTextColor(...LIGHT);
+  doc.setFontSize(7);
+  doc.setFont("helvetica", "normal");
+  doc.text("CoLLM Research Platform  ·  Based on arXiv:2310.19488v3  ·  USTC / MIT", W / 2, H - 9, { align: "center" });
+  doc.text(`Generated: ${now.toLocaleString()}  ·  Confidential Research Output`, W / 2, H - 4, { align: "center" });
 
   return doc;
 }

@@ -1,45 +1,41 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 import { sendReportEmail } from "@/lib/email";
-import { db } from "@/lib/db";
 import { z } from "zod";
 
 const schema = z.object({
   to: z.string().email(),
-  reportTitle: z.string(),
-  reportType: z.string(),
-  dataset: z.string(),
-  metrics: z.record(z.union([z.number(), z.string()])),
-  exportId: z.string().optional(),
+  reportTitle: z.string().optional().default("CoLLM Evaluation Report"),
+  reportType: z.string().optional().default("Evaluation Report"),
+  dataset: z.string().optional().default("MovieLens-1M"),
+  metrics: z.record(z.union([z.number(), z.string()])).optional().default({}),
 });
 
 export async function POST(req: NextRequest) {
-  const session = await getServerSession(authOptions);
-  if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!process.env.RESEND_API_KEY) {
+    return NextResponse.json(
+      { error: "Email not configured — add RESEND_API_KEY in Vercel environment variables" },
+      { status: 503 }
+    );
+  }
 
-  const body = await req.json();
+  let body: any;
+  try { body = await req.json(); }
+  catch { return NextResponse.json({ error: "Invalid JSON" }, { status: 400 }); }
+
   try {
     const data = schema.parse(body);
-    const result = await sendReportEmail({
+    await sendReportEmail({
       to: data.to,
-      recipientName: session.user.name ?? "Researcher",
+      recipientName: data.to.split("@")[0],
       reportTitle: data.reportTitle,
       reportType: data.reportType,
       dataset: data.dataset,
       metrics: data.metrics,
-      generatedAt: new Date().toISOString(),
+      generatedAt: new Date().toLocaleString(),
     });
-
-    if (data.exportId) {
-      await db.exportRecord.update({
-        where: { id: data.exportId },
-        data: { emailSent: true, emailTo: data.to },
-      }).catch(() => {});
-    }
-
-    return NextResponse.json({ success: true, messageId: result.data?.id });
+    return NextResponse.json({ success: true });
   } catch (err: any) {
-    return NextResponse.json({ error: err?.message ?? "Failed to send email" }, { status: 500 });
+    const msg = err?.message ?? "Failed to send email";
+    return NextResponse.json({ error: msg }, { status: 500 });
   }
 }

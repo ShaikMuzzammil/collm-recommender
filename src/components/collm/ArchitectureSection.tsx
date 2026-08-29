@@ -193,7 +193,13 @@ export default function ArchitectureSection() {
   const { selectedModel, setSelectedModel } = useStore();
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 p-6">
+      <div>
+        <h2 className="text-xl font-bold flex items-center gap-2">
+          <Network className="size-5 text-emerald-500" />System Architecture
+        </h2>
+        <p className="text-muted-foreground text-sm">End-to-end pipeline from raw data to LLM prediction</p>
+      </div>
       {/* System Architecture Flow */}
       <Card>
         <CardHeader>
@@ -217,6 +223,21 @@ export default function ArchitectureSection() {
       </Card>
 
       {/* CIE Module + Training Pipeline */}
+      {/* Pipeline output summary */}
+      <div className="grid grid-cols-3 gap-3">
+        {[
+          { label: "CIE Output", val: "eu, ei ∈ ℝ⁶⁴", desc: "User & item collaborative vectors", color: "text-blue-400", bg: "bg-blue-500/10 border-blue-500/20" },
+          { label: "Prompt Output", val: "[CIE + TEXT]", desc: "Hybrid prompt fusing tokens + text", color: "text-purple-400", bg: "bg-purple-500/10 border-purple-500/20" },
+          { label: "Final Output", val: "P(u,i) ∈ [0,1]", desc: "Interaction probability score", color: "text-emerald-400", bg: "bg-emerald-500/10 border-emerald-500/20" },
+        ].map(o => (
+          <div key={o.label} className={`border rounded-xl p-3 ${o.bg}`}>
+            <div className={`text-xs font-semibold ${o.color} mb-1`}>{o.label}</div>
+            <div className={`font-mono text-sm font-bold ${o.color}`}>{o.val}</div>
+            <div className="text-xs text-muted-foreground mt-1">{o.desc}</div>
+          </div>
+        ))}
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="space-y-4">
           <div className="flex items-center gap-2">

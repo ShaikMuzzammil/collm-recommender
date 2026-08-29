@@ -8,7 +8,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { sampleMovies, models } from '@/lib/data';
 import type { ModelId } from '@/lib/store';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, ArrowRight, Star, Zap, BookOpen, Hash } from 'lucide-react';
+import { Sparkles, ArrowRight, Star, Zap, BookOpen, Hash, FileJson, Download } from 'lucide-react';
+import { toast as sonnerToast } from 'sonner';
 import { useStore } from '@/lib/store';
 import { useToast } from '@/hooks/use-toast';
 
@@ -186,9 +187,23 @@ export default function RecommendSection() {
               <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
                 <Card>
                   <CardHeader className="pb-3">
-                    <div className="flex items-center gap-2">
-                      <ArrowRight className="size-4 text-emerald-500" />
-                      <CardTitle className="text-base">Top-5 Recommendations</CardTitle>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <ArrowRight className="size-4 text-emerald-500" />
+                        <CardTitle className="text-base">Top-5 Recommendations</CardTitle>
+                      </div>
+                      {result && (
+                        <div className="flex gap-1.5">
+                          <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => {
+                            const blob = new Blob([JSON.stringify(result, null, 2)], { type: 'application/json' });
+                            const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+                            a.download = `inference-result-${Date.now()}.json`; a.click();
+                            sonnerToast.success('Exported JSON');
+                          }}>
+                            <FileJson className="size-3 mr-1" />JSON
+                          </Button>
+                        </div>
+                      )}
                     </div>
                     <CardDescription>Personalized recommendations generated for this user</CardDescription>
                   </CardHeader>
