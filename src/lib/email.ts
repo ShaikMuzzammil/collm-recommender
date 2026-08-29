@@ -118,3 +118,43 @@ export async function sendReportEmail(opts: EmailOptions) {
 
   return await res.json();
 }
+
+export async function sendContactAck(to: string, name: string, subject: string) {
+  if (!process.env.RESEND_API_KEY) return;
+
+  const html = `<!DOCTYPE html>
+<html>
+<body style="background:#0f172a;font-family:'Segoe UI',Arial,sans-serif;padding:32px;">
+  <div style="max-width:520px;margin:0 auto;background:#1e293b;border-radius:12px;overflow:hidden;border:1px solid #334155;">
+    <div style="background:linear-gradient(135deg,#064e3b,#065f46);padding:24px 28px;">
+      <div style="color:#10b981;font-size:11px;font-weight:700;letter-spacing:3px;text-transform:uppercase;margin-bottom:4px;">CoLLM</div>
+      <div style="color:#fff;font-size:18px;font-weight:800;">Message Received</div>
+    </div>
+    <div style="padding:24px 28px;">
+      <p style="color:#cbd5e1;font-size:14px;margin:0 0 12px;">Hi ${name},</p>
+      <p style="color:#94a3b8;font-size:13px;line-height:1.6;margin:0 0 16px;">
+        We received your message: <strong style="color:#e2e8f0;">"${subject}"</strong>.<br>
+        Our research team will get back to you within 1–2 business days.
+      </p>
+      <div style="background:#0f172a;border:1px solid #1e293b;border-radius:8px;padding:14px;">
+        <p style="color:#64748b;font-size:12px;margin:0;">CoLLM Research Platform · arXiv:2310.19488</p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>`;
+
+  await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      from: process.env.RESEND_FROM_EMAIL ?? "CoLLM Platform <onboarding@resend.dev>",
+      to: [to],
+      subject: `✅ Message received — ${subject}`,
+      html,
+    }),
+  });
+}
