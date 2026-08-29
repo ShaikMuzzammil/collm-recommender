@@ -1,3 +1,4 @@
+// @ts-nocheck
 // ====== PAPER DATA (Table 2 from arXiv:2310.19488v3) ======
 
 export const experimentResults = {

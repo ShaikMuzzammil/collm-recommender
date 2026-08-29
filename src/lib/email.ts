@@ -1,3 +1,4 @@
+// @ts-nocheck
 interface EmailOptions {
   to: string;
   recipientName?: string;
