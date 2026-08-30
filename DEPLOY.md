@@ -1,159 +1,135 @@
-# 🚀 CoLLM Platform — Complete Deployment Guide
+# CoLLM Research Platform v2.0 — Deploy Guide
 
-## Option A: Vercel + Neon (Recommended — Fully Free)
+## Quick Deploy (< 10 min)
 
-### Step 1: Set Up Neon Database (Free PostgreSQL)
-
-1. Go to [neon.tech](https://neon.tech) → **Start Free**
-2. Create a new project: `collm-platform`
-3. Go to **Dashboard** → **Connection Details**
-4. Copy the **Connection String** (looks like `postgresql://user:pass@ep-xxx.us-east-1.aws.neon.tech/neondb?sslmode=require`)
-5. Save this as your `DATABASE_URL`
-
-### Step 2: Push to GitHub
-
+### 1. Push to GitHub
 ```bash
-cd collm-platform
+cd collm-v2
 git init
 git add .
-git commit -m "feat: CoLLM Research Platform v2"
-git branch -M main
-git remote add origin https://github.com/YOUR_USERNAME/collm-recommender.git
-git push -u origin main
+git commit -m "feat: CoLLM Research Platform v2.0"
+git remote add origin https://github.com/ShaikMuzzammil/collm-recommender.git
+git push -f origin main
 ```
 
-### Step 3: Deploy on Vercel
+### 2. Create Vercel Postgres
+- Go to: Vercel Dashboard → Your Project → **Storage** tab
+- Click **Create Database** → **Postgres** → name it `collm-db`
+- Copy `DATABASE_URL` and `DIRECT_URL` from **Settings** tab inside the DB
 
-1. Go to [vercel.com](https://vercel.com) → **Add New Project**
-2. Import from GitHub → select `collm-recommender`
-3. Framework: **Next.js** (auto-detected)
-4. Click **Environment Variables** and add:
+### 3. Set Environment Variables
+Vercel Dashboard → Project → **Settings → Environment Variables**
 
-| Name | Value |
-|------|-------|
-| `DATABASE_URL` | Your Neon connection string |
-| `NEXTAUTH_URL` | `https://your-project-name.vercel.app` |
-| `NEXTAUTH_SECRET` | Run `openssl rand -base64 32` and paste result |
+| Variable | Value | Required |
+|----------|-------|----------|
+| `DATABASE_URL` | from Vercel Postgres | ✅ Yes |
+| `DIRECT_URL` | from Vercel Postgres | ✅ Yes |
+| `NEXTAUTH_SECRET` | `openssl rand -base64 32` | ✅ Yes |
+| `NEXTAUTH_URL` | `https://collm-recommender.vercel.app` | ✅ Yes |
+| `EMAIL_USER` | `collm.platform@gmail.com` | Optional (email features) |
+| `EMAIL_PASS` | Google App Password (16 chars, no spaces) | Optional (email features) |
 
-5. Click **Deploy** → Wait ~2 minutes
+### 4. Redeploy
+After adding env vars, click **Redeploy** in Vercel → Deployments.
 
-### Step 4: Initialize Database
-
-After first deploy, run in Vercel terminal or locally:
-
+### 5. Push DB Schema
+After first successful deploy:
 ```bash
-# Locally (with DATABASE_URL in .env):
-npm run db:push
-npm run db:seed
-
-# Or via Vercel CLI:
+# Option A: Using Vercel CLI
 vercel env pull .env.local
-npm run db:push
-npm run db:seed
+npx prisma db push
+
+# Option B: Via Neon Dashboard
+# Go to Vercel Postgres → Open in Neon → SQL Editor → run the schema
 ```
 
 ---
 
-## Adding Optional Features
+## Gmail SMTP Setup (Free Email, No Domain)
 
-### Email Reports (Free — 3,000/month)
+### Step 1 — Create Gmail Account
+Create a dedicated account: `collm.platform@gmail.com`
+*(Don't use your personal Gmail — this account sends automated emails)*
 
-1. Go to [resend.com](https://resend.com) → **Get Started**
-2. Verify your domain (or use `onboarding@resend.dev` for testing)
-3. Create API Key → copy it
-4. In Vercel → Project Settings → Environment Variables:
-   - `RESEND_API_KEY` = `re_xxxxxxxxxx`
-   - `RESEND_FROM_EMAIL` = `CoLLM Platform <reports@yourdomain.com>`
-5. Redeploy
+### Step 2 — Enable 2-Step Verification
+`myaccount.google.com` → **Security** → **2-Step Verification** → Turn On
 
-### Google OAuth (Free)
+### Step 3 — Create App Password
+`myaccount.google.com/apppasswords` → App name: **CoLLM Platform**
 
-1. Go to [console.cloud.google.com](https://console.cloud.google.com)
-2. Create project → APIs & Services → Credentials → OAuth 2.0 Client IDs
-3. Application type: **Web application**
-4. Authorized redirect URIs: `https://your-app.vercel.app/api/auth/callback/google`
-5. Copy Client ID and Client Secret
-6. Add to Vercel env vars:
-   - `GOOGLE_CLIENT_ID` = your client ID
-   - `GOOGLE_CLIENT_SECRET` = your secret
-7. Redeploy
+Google gives you: `abcd efgh ijkl mnop`
+**Remove spaces**: `abcdefghijklmnop`
 
----
-
-## Environment Variables Reference
-
-```env
-# Required
-DATABASE_URL="postgresql://..."           # Neon PostgreSQL
-NEXTAUTH_URL="https://your-app.vercel.app"
-NEXTAUTH_SECRET="random-32-char-string"
-
-# Email (optional)
-RESEND_API_KEY="re_xxxxxxxx"
-RESEND_FROM_EMAIL="CoLLM <reports@yourdomain.com>"
-
-# Google OAuth (optional)
-GOOGLE_CLIENT_ID="xxx.apps.googleusercontent.com"
-GOOGLE_CLIENT_SECRET="GOCSPX-xxx"
+### Step 4 — Add to Vercel
+```
+EMAIL_USER = collm.platform@gmail.com
+EMAIL_PASS = abcdefghijklmnop
 ```
 
+### Step 5 — Redeploy
+Done! Email now works for:
+- ✅ Report delivery (to any email address)
+- ✅ Contact form acknowledgments
+- ✅ Branded HTML template with metrics table
+
 ---
 
-## Local Development
+## Export Features
 
-```bash
-# Install dependencies
-npm install --legacy-peer-deps
+### PDF (8 Pages)
+| Page | Content |
+|------|---------|
+| 1 | Cover page with official stamp, pipeline preview |
+| 2 | Table of contents |
+| 3 | Executive summary + key metrics (3 main + full breakdown table) |
+| 4 | All 12 models comparison + warm/cold breakdown |
+| 5 | Ablation study + 5-step training pipeline + config |
+| 6 | Detailed methodology (architecture, CIE, LoRA, eval protocol) |
+| 7 | Efficiency analysis + cold-start improvement |
+| 8 | Conclusions (5 findings) + references |
 
-# Copy and fill .env
-cp .env.example .env
-
-# Generate Prisma client + push schema
-npm run db:push
-
-# Seed demo user (demo@collm.app / collm2024!)
-npm run db:seed
-
-# Start dev server
-npm run dev
+### JSON (11 sections)
+```
+reportInfo, selectedModel, dataset, metrics, warmColdAnalysis,
+allModelsComparison, ablationStudy, hyperparameterTuning,
+efficiencyMetrics, evaluationProtocol, paperReference
 ```
 
-Open http://localhost:3000
+### CSV (6 sections)
+```
+§1 Selected Model × 3 scenarios
+§2 All 12 Models — Overall AUC/UAUC/NDCG
+§3 Warm/Cold Breakdown
+§4 Ablation Study + ΔStat + impact level
+§5 Hyperparameter Tuning
+§6 Efficiency Metrics
+```
 
----
-
-## Build Commands
-
-| Command | Description |
-|---------|-------------|
-| `npm run dev` | Start development server |
-| `npm run build` | Build for production |
-| `npm run start` | Start production server |
-| `npm run db:push` | Push Prisma schema to database |
-| `npm run db:studio` | Open Prisma Studio (DB GUI) |
-| `npm run db:seed` | Seed demo user |
-| `npm run lint` | Run ESLint |
+### Email
+- Sends formatted HTML report via Gmail SMTP
+- Includes: metrics table, warm/cold analysis, model comparison
+- Subject: `📊 CoLLM Evaluation Report — [Model] on [Dataset]`
 
 ---
 
 ## Troubleshooting
 
-### Build fails: postcss error
-→ Check `postcss.config.mjs` uses `{ tailwindcss: {}, autoprefixer: {} }` format
+### "Registration failed" error
+1. `DATABASE_URL` not set → add to Vercel env vars
+2. Database not migrated → run `npx prisma db push`
+3. Email already exists → use sign-in instead
 
-### "Prisma Client not generated"
-```bash
-npm run db:push
-```
+### Email sends but not received
+1. Check spam folder
+2. Verify App Password has no spaces
+3. Check `EMAIL_USER` is the full Gmail address
+4. Try: Vercel Function Logs → your `/api/email` endpoint
 
-### "Invalid DATABASE_URL"
-→ Make sure connection string ends with `?sslmode=require` for Neon
+### Build fails on Vercel
+- Both `eslint.ignoreDuringBuilds` and `typescript.ignoreBuildErrors` are set to `true`
+- Should never fail due to lint/type errors
+- If it does fail, check Vercel build logs for the exact import error
 
-### Email not sending
-→ Check `RESEND_API_KEY` is set; verify domain in Resend dashboard
-
-### Training/Evaluation shows error
-→ Features work without login (client-side simulation). For DB persistence, sign in first.
-
-### "NEXTAUTH_URL mismatch"
-→ Must match exactly the URL you're accessing, including protocol and no trailing slash
+### PDF is only 1 page
+- This means `generateFullCoLLMReport` wasn't called (only `generateCoLLMReport`)
+- Check ExportSection.tsx imports — ensure it imports from `@/lib/pdf`

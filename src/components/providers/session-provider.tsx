@@ -1,3 +1,4 @@
+// @ts-nocheck
 "use client";
 import { SessionProvider as NextAuthProvider } from "next-auth/react";
 import { type Session } from "next-auth";

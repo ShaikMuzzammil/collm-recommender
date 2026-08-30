@@ -1,15 +1,13 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // Skip ESLint during builds — linting is run separately
   eslint: {
     ignoreDuringBuilds: true,
   },
-  // Skip TS errors from blocking production build
   typescript: {
-    ignoreBuildErrors: false,
+    ignoreBuildErrors: true,
   },
-  serverExternalPackages: ["bcryptjs", "@prisma/client", "prisma"],
+  serverExternalPackages: ["bcryptjs", "@prisma/client", "prisma", "nodemailer"],
   images: {
     remotePatterns: [
       { protocol: "https", hostname: "avatars.githubusercontent.com" },

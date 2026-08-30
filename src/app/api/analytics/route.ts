@@ -5,66 +5,47 @@ import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
 
 export async function GET(req: NextRequest) {
-  const session = await getServerSession(authOptions);
-
-  // Return empty analytics for unauthenticated users (no 401)
-  if (!session?.user?.id) {
-    return NextResponse.json({
-      summary: { totalJobs: 0, totalEvals: 0, totalRecs: 0, totalExports: 0, avgAuc: 0, avgLatency: 0 },
-      timeSeries: [],
-      modelUsage: [],
-    });
-  }
-
-  const userId = session.user.id;
-
+  // Always return 200 — unauthenticated users get empty data, never 401
   try {
-    const [jobs, evals, recs, exports_] = await Promise.all([
-      db.trainingJob.findMany({ where: { userId }, orderBy: { createdAt: "desc" }, take: 50 }),
-      db.evaluation.findMany({ where: { userId }, orderBy: { createdAt: "desc" }, take: 30 }),
-      db.recommendationLog.findMany({ where: { userId }, orderBy: { createdAt: "desc" }, take: 100 }),
-      db.exportRecord.findMany({ where: { userId }, orderBy: { createdAt: "desc" }, take: 20 }),
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) {
+      return NextResponse.json({
+        summary: { trainingSessions: 0, evaluations: 0, exports: 0, recommendations: 0 },
+        recentExports: [],
+        recentEvals: [],
+      });
+    }
+
+    const userId = session.user.id;
+    const [trainingCount, evalCount, exportCount, recommendCount] = await Promise.all([
+      db.trainingJob.count({ where: { userId } }),
+      db.evaluation.count({ where: { userId } }),
+      db.exportRecord.count({ where: { userId } }),
+      db.recommendationLog.count({ where: { userId } }),
     ]);
 
-    const completedJobs = jobs.filter(j => j.status === "completed");
-    const avgAuc = completedJobs.length > 0
-      ? completedJobs.reduce((s, j) => s + (j.finalAuc ?? 0), 0) / completedJobs.length
-      : 0;
-    const avgLatency = recs.length > 0
-      ? recs.reduce((s, r) => s + (r.latencyMs ?? 0), 0) / recs.length
-      : 0;
-
-    // Time series - last 7 days
-    const now = Date.now();
-    const days = Array.from({ length: 7 }, (_, i) => {
-      const d = new Date(now - (6 - i) * 86400000);
-      return d.toISOString().slice(0, 10);
-    });
-
-    const timeSeries = days.map(day => ({
-      date: day,
-      jobs: jobs.filter(j => j.createdAt.toISOString().startsWith(day)).length,
-      evals: evals.filter(e => e.createdAt.toISOString().startsWith(day)).length,
-      recs: recs.filter(r => r.createdAt.toISOString().startsWith(day)).length,
-    }));
-
-    const modelCounts: Record<string, number> = {};
-    jobs.forEach(j => { modelCounts[j.collabModel] = (modelCounts[j.collabModel] ?? 0) + 1; });
+    const [recentExports, recentEvals] = await Promise.all([
+      db.exportRecord.findMany({ where: { userId }, orderBy: { createdAt: "desc" }, take: 5 }),
+      db.evaluation.findMany({ where: { userId }, orderBy: { createdAt: "desc" }, take: 5 }),
+    ]);
 
     return NextResponse.json({
       summary: {
-        totalJobs: jobs.length, totalEvals: evals.length,
-        totalRecs: recs.length, totalExports: exports_.length,
-        avgAuc: +avgAuc.toFixed(4), avgLatency: +avgLatency.toFixed(1),
+        trainingSessions: trainingCount,
+        evaluations:      evalCount,
+        exports:          exportCount,
+        recommendations:  recommendCount,
       },
-      timeSeries,
-      modelUsage: Object.entries(modelCounts).map(([model, count]) => ({ model, count })),
+      recentExports,
+      recentEvals,
     });
-  } catch {
+  } catch (err: any) {
+    console.error("Analytics error:", err?.message);
+    // Return empty data instead of error
     return NextResponse.json({
-      summary: { totalJobs: 0, totalEvals: 0, totalRecs: 0, totalExports: 0, avgAuc: 0, avgLatency: 0 },
-      timeSeries: [],
-      modelUsage: [],
+      summary: { trainingSessions: 0, evaluations: 0, exports: 0, recommendations: 0 },
+      recentExports: [],
+      recentEvals: [],
     });
   }
 }
