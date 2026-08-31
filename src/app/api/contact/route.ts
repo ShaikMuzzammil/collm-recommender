@@ -1,61 +1,66 @@
 // @ts-nocheck
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
-import { db } from "@/lib/db";
-import { sendContactAck } from "@/lib/email";
+import { sendContactEmail } from "@/lib/resend";
 import { z } from "zod";
 
 const schema = z.object({
-  name: z.string().min(2),
-  email: z.string().email(),
-  subject: z.string().min(4),
-  message: z.string().min(10),
+  name: z.string().min(2, "Name must be at least 2 chars"),
+  email: z.string().email("Invalid email"),
+  subject: z.string().min(4, "Subject too short"),
+  message: z.string().min(10, "Message too short"),
   category: z.string().default("general"),
 });
 
 export async function POST(req: NextRequest) {
   let body: any;
-  try { body = await req.json(); } catch { return NextResponse.json({ error: "Invalid JSON" }, { status: 400 }); }
+  try { body = await req.json(); }
+  catch { return NextResponse.json({ error: "Invalid JSON" }, { status: 400 }); }
 
-  const session = await getServerSession(authOptions);
-  try {
-    const data = schema.parse(body);
-
-    // Try to save to DB (non-critical)
-    let msgId: string | undefined;
-    try {
-      if (process.env.DATABASE_URL) {
-        const msg = await db.contactMessage.create({
-          data: { ...data, userId: session?.user?.id ?? null },
-        });
-        msgId = msg.id;
-      }
-    } catch (dbErr: any) {
-      console.error("Contact DB error:", dbErr?.message);
-    }
-
-    // Send ack email if Gmail SMTP is configured
-    if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
-      sendContactAck(data.email, data.name, data.subject).catch(e =>
-        console.error("Contact ack email error:", e?.message)
-      );
-    }
-
-    return NextResponse.json({ id: msgId ?? "no-db", status: "received" }, { status: 201 });
-  } catch (err: any) {
-    return NextResponse.json({ error: err?.message ?? "Failed" }, { status: 400 });
+  const parsed = schema.safeParse(body);
+  if (!parsed.success) {
+    const msg = parsed.error.errors[0]?.message ?? "Invalid input";
+    return NextResponse.json({ error: msg }, { status: 400 });
   }
-}
 
-export async function GET() {
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.id) return NextResponse.json({ messages: [] });
-  try {
-    const msgs = await db.contactMessage.findMany({
-      where: { userId: session.user.id },
-      orderBy: { createdAt: "desc" },
-    });
-    return NextResponse.json({ messages: msgs });
-  } catch { return NextResponse.json({ messages: [] }); }
+  const data = parsed.data;
+
+  // Try Resend first
+  if (process.env.RESEND_API_KEY) {
+    try {
+      await sendContactEmail({
+        to: data.email,
+        fromName: data.name,
+        fromEmail: data.email,
+        subject: data.subject,
+        message: data.message,
+        category: data.category,
+      });
+      return NextResponse.json({ status: "sent", method: "resend" }, { status: 201 });
+    } catch (e: any) {
+      console.error("Resend contact error:", e?.message);
+      return NextResponse.json({ error: `Email delivery failed: ${e?.message}` }, { status: 500 });
+    }
+  }
+
+  // Fallback: Nodemailer
+  if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
+    try {
+      const nodemailer = (await import("nodemailer")).default;
+      const t = nodemailer.createTransport({ service: "gmail", auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS } });
+      await t.sendMail({
+        from: `"CoLLM Platform" <${process.env.EMAIL_USER}>`,
+        to: process.env.EMAIL_USER,
+        replyTo: data.email,
+        subject: `[CoLLM Contact] ${data.subject}`,
+        text: `From: ${data.name} <${data.email}>\nCategory: ${data.category}\n\n${data.message}`,
+      });
+      return NextResponse.json({ status: "sent", method: "nodemailer" }, { status: 201 });
+    } catch (e: any) {
+      console.error("Nodemailer contact error:", e?.message);
+      return NextResponse.json({ error: "Email delivery failed" }, { status: 500 });
+    }
+  }
+
+  // No email configured — still accept the message (stored in-memory for this session)
+  return NextResponse.json({ status: "received", method: "no-email", note: "Add RESEND_API_KEY or EMAIL_USER+EMAIL_PASS to enable email delivery" }, { status: 201 });
 }

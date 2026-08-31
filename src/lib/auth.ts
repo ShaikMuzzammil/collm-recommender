@@ -9,63 +9,67 @@ import { db } from "@/lib/db";
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(db) as any,
   session: { strategy: "jwt" },
-  pages: {
-    signIn: "/sign-in",
-    newUser: "/sign-up",
-  },
+  pages: { signIn: "/sign-in", newUser: "/sign-up" },
   providers: [
+    // Google OAuth — enabled when GOOGLE_CLIENT_ID + GOOGLE_CLIENT_SECRET are set
     ...(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET
       ? [GoogleProvider({
-          clientId: process.env.GOOGLE_CLIENT_ID,
+          clientId:     process.env.GOOGLE_CLIENT_ID,
           clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+          authorization: { params: { prompt: "select_account" } },
         })]
       : []),
+
     CredentialsProvider({
       name: "credentials",
       credentials: {
-        email: { label: "Email", type: "email" },
+        email:    { label: "Email",    type: "email" },
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
-          throw new Error("Email and password required");
+          throw new Error("Email and password are required");
         }
-        const user = await db.user.findUnique({
-          where: { email: credentials.email },
-        });
-        if (!user || !user.password) {
-          throw new Error("No account found with this email");
+        if (!process.env.DATABASE_URL) {
+          throw new Error("Database not configured");
         }
-        const isValid = await bcrypt.compare(credentials.password, user.password);
-        if (!isValid) throw new Error("Incorrect password");
-        return { id: user.id, email: user.email, name: user.name, image: user.image };
+        try {
+          const user = await db.user.findUnique({ where: { email: credentials.email } });
+          if (!user) throw new Error("No account found with this email — please sign up first");
+          if (!user.password) throw new Error("This account uses Google sign-in — use the Google button");
+          const isValid = await bcrypt.compare(credentials.password, user.password);
+          if (!isValid) throw new Error("Incorrect password");
+          return { id: user.id, email: user.email, name: user.name, image: user.image };
+        } catch (e: any) {
+          throw new Error(e.message ?? "Authentication failed");
+        }
       },
     }),
   ],
   callbacks: {
     async session({ token, session }) {
       if (token) {
-        session.user.id = token.id as string;
-        session.user.name = token.name;
+        session.user.id    = token.id as string;
+        session.user.name  = token.name;
         session.user.email = token.email;
         session.user.image = token.picture as string | null;
-        session.user.role = token.role as string;
       }
       return session;
     },
     async jwt({ token, user }) {
-      const dbUser = await db.user.findFirst({ where: { email: token.email! } });
-      if (!dbUser) {
-        if (user) token.id = user.id;
+      try {
+        if (!process.env.DATABASE_URL) return token;
+        const dbUser = await db.user.findFirst({ where: { email: token.email! } });
+        if (!dbUser) {
+          if (user) token.id = user.id;
+          return token;
+        }
+        return { id: dbUser.id, name: dbUser.name, email: dbUser.email, picture: dbUser.image };
+      } catch {
         return token;
       }
-      return {
-        id: dbUser.id,
-        name: dbUser.name,
-        email: dbUser.email,
-        picture: dbUser.image,
-        role: dbUser.role,
-      };
     },
   },
+  secret: process.env.NEXTAUTH_SECRET,
+  debug: process.env.NODE_ENV === "development",
 };

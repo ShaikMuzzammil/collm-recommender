@@ -2,7 +2,11 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
-export type TabId = "dashboard" | "architecture" | "models" | "experiments" | "recommend" | "datasets" | "export" | "api-docs" | "training" | "evaluation" | "analytics" | "workspace" | "contact" | "guide";
+export type TabId =
+  | "dashboard" | "architecture" | "models" | "experiments" | "recommend"
+  | "datasets" | "export" | "api-docs" | "training" | "evaluation"
+  | "analytics" | "workspace" | "contact" | "guide" | "settings";
+
 export type DatasetId = "ml-1m" | "amazon-book";
 export type ModelId = "mf" | "lightgcn" | "sasrec" | "din";
 

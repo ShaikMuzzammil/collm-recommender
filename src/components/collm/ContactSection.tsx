@@ -1,206 +1,158 @@
 // @ts-nocheck
 "use client";
 import { useState } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { motion } from "framer-motion";
-import { Mail, MessageSquare, Send, CheckCircle, Github, BookOpen, ExternalLink, Loader2, MapPin, Users } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { MessageSquare, Send, CheckCircle, Loader2, BookOpen, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { useSession } from "next-auth/react";
 
-const schema = z.object({
-  name: z.string().min(2, "Name required"),
-  email: z.string().email("Valid email required"),
-  subject: z.string().min(4, "Subject required"),
-  message: z.string().min(10, "Message too short"),
-  category: z.string(),
-});
-type FormData = z.infer<typeof schema>;
-
-const CATEGORIES = ["general", "bug-report", "feature-request", "research-collaboration", "commercial", "other"];
-const LINKS = [
-  { label: "GitHub Repository", href: "https://github.com/zyang1580/CoLLM", icon: Github, desc: "Source code & issues" },
-  { label: "arXiv Paper", href: "https://arxiv.org/abs/2310.19488", icon: BookOpen, desc: "arXiv:2310.19488v3" },
-  { label: "USTC Research Lab", href: "https://rec.ustc.edu.cn", icon: ExternalLink, desc: "Fuli Feng · Xiangnan He" },
-];
-const TEAM = [
-  { name: "Yang Zhang", role: "Lead Author", org: "National University of Singapore" },
-  { name: "Fuli Feng", role: "Corresponding Author", org: "USTC" },
-  { name: "Jizhi Zhang", role: "Author", org: "USTC" },
-  { name: "Keqin Bao", role: "Author", org: "USTC" },
-  { name: "Qifan Wang", role: "Author", org: "Meta AI" },
-  { name: "Xiangnan He", role: "Corresponding Author", org: "USTC" },
+const CATEGORIES = [
+  { value: "general",      label: "General Inquiry" },
+  { value: "bug",          label: "Bug Report" },
+  { value: "feature",      label: "Feature Request" },
+  { value: "research",     label: "Research Collaboration" },
+  { value: "data",         label: "Data / Results Question" },
 ];
 
 export default function ContactSection() {
   const { data: session } = useSession();
-  const [sent, setSent] = useState(false);
-  const [loading, setLoading] = useState(false);
-
-  const { register, handleSubmit, setValue, formState: { errors }, reset } = useForm<FormData>({
-    resolver: zodResolver(schema),
-    defaultValues: {
-      name: session?.user?.name ?? "",
-      email: session?.user?.email ?? "",
-      category: "general",
-    },
+  const [form, setForm] = useState({
+    name: session?.user?.name ?? "",
+    email: session?.user?.email ?? "",
+    category: "general",
+    subject: "",
+    message: "",
   });
+  const [submitting, setSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
 
-  const onSubmit = async (data: FormData) => {
-    setLoading(true);
-    const res = await fetch("/api/contact", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data),
-    });
-    setLoading(false);
-    if (!res.ok) { toast.error("Failed to send message"); return; }
-    setSent(true);
-    reset();
-    toast.success("Message sent! We'll respond within 24–48 hours.");
+  const handleSubmit = async () => {
+    if (!form.name || !form.email || !form.subject || !form.message) {
+      toast.error("Please fill in all fields");
+      return;
+    }
+    setSubmitting(true);
+    try {
+      const res = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        toast.error(data.error ?? "Failed to send — please try again");
+      } else {
+        setSubmitted(true);
+      }
+    } catch {
+      toast.error("Network error — check your connection");
+    }
+    setSubmitting(false);
   };
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="max-w-2xl mx-auto p-6 space-y-6">
       <div>
-        <h2 className="text-xl font-bold">Contact & Support</h2>
-        <p className="text-muted-foreground text-sm">Reach the CoLLM research team or open a GitHub issue</p>
+        <h2 className="text-2xl font-bold flex items-center gap-2">
+          <MessageSquare className="size-5 text-emerald-500" /> Contact
+        </h2>
+        <p className="text-muted-foreground text-sm mt-1">Send a message about the CoLLM platform or paper.</p>
       </div>
 
-      <div className="grid lg:grid-cols-3 gap-6">
-        {/* Form */}
-        <div className="lg:col-span-2">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base flex items-center gap-2">
-                <MessageSquare className="size-4 text-emerald-500" />
-                Send a Message
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {sent ? (
-                <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
-                  className="flex flex-col items-center justify-center py-12 gap-4">
-                  <div className="size-16 rounded-full bg-emerald-500/15 flex items-center justify-center">
-                    <CheckCircle className="size-8 text-emerald-500" />
-                  </div>
-                  <div className="text-center">
-                    <h3 className="font-semibold text-lg">Message Received!</h3>
-                    <p className="text-muted-foreground text-sm mt-1">We'll respond within 24–48 hours. Check your email for a confirmation.</p>
-                  </div>
-                  <Button variant="outline" onClick={() => setSent(false)}>Send Another</Button>
-                </motion.div>
-              ) : (
-                <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-1.5">
-                      <Label>Full Name</Label>
-                      <Input placeholder="Yang Zhang" {...register("name")} />
-                      {errors.name && <p className="text-xs text-destructive">{errors.name.message}</p>}
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label>Email</Label>
-                      <Input type="email" placeholder="you@ustc.edu.cn" {...register("email")} />
-                      {errors.email && <p className="text-xs text-destructive">{errors.email.message}</p>}
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-1.5">
-                      <Label>Category</Label>
-                      <Select defaultValue="general" onValueChange={v => setValue("category", v)}>
-                        <SelectTrigger><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          {CATEGORIES.map(c => (
-                            <SelectItem key={c} value={c} className="capitalize">{c.replace(/-/g, " ")}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label>Subject</Label>
-                      <Input placeholder="Brief subject line" {...register("subject")} />
-                      {errors.subject && <p className="text-xs text-destructive">{errors.subject.message}</p>}
-                    </div>
-                  </div>
-
+      <Card className="border-border/50">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base flex items-center gap-2">
+            <Send className="size-4 text-emerald-500" /> Send a Message
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <AnimatePresence mode="wait">
+            {submitted ? (
+              <motion.div key="success" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
+                className="py-14 flex flex-col items-center gap-4 text-center">
+                <div className="size-16 rounded-full bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center">
+                  <CheckCircle className="size-8 text-emerald-500" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold">Message Received!</h3>
+                  <p className="text-muted-foreground text-sm mt-1">
+                    We'll respond within 24–48 hours. Check your email for a confirmation.
+                  </p>
+                </div>
+                <Button variant="outline" size="sm" className="mt-2 gap-2"
+                  onClick={() => { setSubmitted(false); setForm(f => ({ ...f, subject: "", message: "" })); }}>
+                  <RefreshCw className="size-3.5" /> Send Another
+                </Button>
+              </motion.div>
+            ) : (
+              <motion.div key="form" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4">
+                <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1.5">
-                    <Label>Message</Label>
-                    <Textarea placeholder="Describe your question, bug, or collaboration idea in detail…" rows={5} {...register("message")} />
-                    {errors.message && <p className="text-xs text-destructive">{errors.message.message}</p>}
+                    <Label className="text-xs">Full Name</Label>
+                    <Input placeholder="Yang Zhang" value={form.name}
+                      onChange={e => setForm(f => ({ ...f, name: e.target.value }))} />
                   </div>
-
-                  <Button type="submit" className="bg-emerald-600 hover:bg-emerald-700 w-full" disabled={loading}>
-                    {loading ? <Loader2 className="size-4 animate-spin mr-2" /> : <Send className="size-4 mr-2" />}
-                    {loading ? "Sending…" : "Send Message"}
-                  </Button>
-                </form>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Sidebar */}
-        <div className="space-y-4">
-          {/* Links */}
-          <Card>
-            <CardHeader><CardTitle className="text-sm">Resources</CardTitle></CardHeader>
-            <CardContent className="space-y-3">
-              {LINKS.map(l => (
-                <a key={l.label} href={l.href} target="_blank" rel="noopener noreferrer"
-                  className="flex items-center gap-3 p-3 rounded-lg border border-border hover:border-emerald-500/40 hover:bg-emerald-500/5 transition-all group">
-                  <l.icon className="size-4 text-emerald-500 flex-shrink-0" />
-                  <div>
-                    <div className="text-sm font-medium group-hover:text-emerald-400 transition-colors">{l.label}</div>
-                    <div className="text-xs text-muted-foreground">{l.desc}</div>
-                  </div>
-                  <ExternalLink className="size-3 ml-auto opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground" />
-                </a>
-              ))}
-            </CardContent>
-          </Card>
-
-          {/* Research Team */}
-          <Card>
-            <CardHeader><CardTitle className="text-sm flex items-center gap-2"><Users className="size-4 text-emerald-500" />Research Team</CardTitle></CardHeader>
-            <CardContent className="space-y-2">
-              {TEAM.map(m => (
-                <div key={m.name} className="flex items-start gap-2 py-1.5 border-b border-border/50 last:border-0">
-                  <div className="size-7 rounded-full bg-emerald-500/15 flex items-center justify-center flex-shrink-0 text-xs font-bold text-emerald-500">
-                    {m.name[0]}
-                  </div>
-                  <div>
-                    <div className="text-sm font-medium leading-tight">{m.name}</div>
-                    <div className="text-xs text-muted-foreground">{m.role} · {m.org}</div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">Email</Label>
+                    <Input type="email" placeholder="you@ustc.edu.cn" value={form.email}
+                      onChange={e => setForm(f => ({ ...f, email: e.target.value }))} />
                   </div>
                 </div>
-              ))}
-            </CardContent>
-          </Card>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">Category</Label>
+                    <Select value={form.category} onValueChange={v => setForm(f => ({ ...f, category: v }))}>
+                      <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {CATEGORIES.map(c => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">Subject</Label>
+                    <Input placeholder="Brief subject line" value={form.subject}
+                      onChange={e => setForm(f => ({ ...f, subject: e.target.value }))} />
+                  </div>
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Message</Label>
+                  <Textarea placeholder="Describe your question, bug, or idea in detail..."
+                    rows={6} value={form.message}
+                    onChange={e => setForm(f => ({ ...f, message: e.target.value }))} />
+                </div>
+                <Button onClick={handleSubmit} disabled={submitting} className="w-full bg-emerald-600 hover:bg-emerald-700">
+                  {submitting ? <Loader2 className="size-4 mr-2 animate-spin" /> : <Send className="size-4 mr-2" />}
+                  {submitting ? "Sending…" : "Send Message"}
+                </Button>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </CardContent>
+      </Card>
 
-          {/* Location */}
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-2 mb-2">
-                <MapPin className="size-4 text-emerald-500" />
-                <span className="text-sm font-medium">Location</span>
-              </div>
-              <p className="text-xs text-muted-foreground">University of Science and Technology of China (USTC)</p>
-              <p className="text-xs text-muted-foreground">Hefei, Anhui Province, China</p>
-              <div className="mt-2 pt-2 border-t border-border">
-                <p className="text-xs text-muted-foreground">Supported by National Key R&D Program of China (2022YFB3104701) and NSFC (U24B20180)</p>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
+      {/* arXiv Paper Card Only */}
+      <Card className="border-border/50 bg-card/40">
+        <CardContent className="p-4 flex items-center gap-4">
+          <div className="size-10 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center shrink-0">
+            <BookOpen className="size-5 text-emerald-500" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="text-sm font-medium">CoLLM Paper</div>
+            <div className="text-xs text-muted-foreground">arXiv:2310.19488v3 · Yang Zhang et al. · USTC / MIT</div>
+          </div>
+          <Button variant="outline" size="sm" asChild>
+            <a href="https://arxiv.org/abs/2310.19488" target="_blank" rel="noopener noreferrer">
+              Read Paper
+            </a>
+          </Button>
+        </CardContent>
+      </Card>
     </div>
   );
 }

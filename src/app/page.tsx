@@ -27,6 +27,7 @@ import WorkspaceSection from "@/components/collm/WorkspaceSection";
 import ExportSection from "@/components/collm/ExportSection";
 import ContactSection from "@/components/collm/ContactSection";
 import GuideSection from "@/components/collm/GuideSection";
+import SettingsSection from "@/components/collm/SettingsSection";
 
 // Lazy-loaded existing sections
 import dynamic from "next/dynamic";
@@ -54,6 +55,7 @@ const NAV_ITEMS: NavItem[] = [
   { id: "api-docs",     label: "API Docs",        icon: Code2,           group: "dev" },
   { id: "contact",      label: "Contact",         icon: MessageSquare,   group: "dev" },
   { id: "guide",        label: "Guide & Help",    icon: BookOpen,        group: "dev" },
+  { id: "settings",     label: "Settings",        icon: Settings,        group: "dev" },
 ];
 
 const GROUPS: Record<string, string> = {
@@ -75,6 +77,7 @@ const SECTION_MAP: Record<TabId, React.ComponentType> = {
   "api-docs": ApiDocsSection as any,
   contact: ContactSection,
   guide: GuideSection,
+  settings: SettingsSection,
 };
 
 export default function HomePage() {
@@ -190,6 +193,7 @@ export default function HomePage() {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-48">
               <DropdownMenuItem onClick={() => setActiveTab("workspace")}><FolderOpen className="size-3.5 mr-2" />Workspace</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setActiveTab("settings" as any)}><Settings className="size-3.5 mr-2" />Settings</DropdownMenuItem>
               <DropdownMenuItem onClick={() => setTheme(theme === "dark" ? "light" : "dark")}>
                 {theme === "dark" ? <Sun className="size-3.5 mr-2" /> : <Moon className="size-3.5 mr-2" />}Toggle Theme
               </DropdownMenuItem>
@@ -260,9 +264,6 @@ export default function HomePage() {
             </div>
           </div>
           <div className="flex items-center gap-2 flex-shrink-0">
-            <a href="https://github.com/zyang1580/CoLLM" target="_blank" rel="noopener noreferrer">
-              <Button variant="ghost" size="icon" className="size-8"><Github className="size-4" /></Button>
-            </a>
             <Button variant="ghost" size="icon" className="size-8" onClick={() => setTheme(theme === "dark" ? "light" : "dark")}>
               {theme === "dark" ? <Sun className="size-4" /> : <Moon className="size-4" />}
             </Button>

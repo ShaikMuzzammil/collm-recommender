@@ -14,7 +14,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Download, FileText, FileJson, FileSpreadsheet, Mail, Send, CheckCircle,
   Loader2, BarChart3, Database, Eye, FileCheck, Clock, Stamp, Info, ChevronRight,
-  BookOpen, Layers, TrendingUp, AlertCircle
+  BookOpen, Layers, TrendingUp
 } from "lucide-react";
 import { toast } from "sonner";
 import { useSession } from "next-auth/react";
@@ -635,15 +635,7 @@ export default function ExportSection() {
                 </div>
               </div>
 
-              {/* Setup notice */}
-              <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-3 flex gap-2.5">
-                <AlertCircle className="size-4 text-amber-400 mt-0.5 shrink-0" />
-                <div className="text-xs text-amber-300/80 space-y-1">
-                  <p className="font-medium text-amber-300">Gmail SMTP Setup Required</p>
-                  <p>Add <code className="bg-amber-900/30 px-1 rounded">EMAIL_USER</code> (your Gmail) and <code className="bg-amber-900/30 px-1 rounded">EMAIL_PASS</code> (Google App Password) to Vercel env vars.</p>
-                  <p>Create App Password at: <span className="text-amber-400">myaccount.google.com/apppasswords</span></p>
-                </div>
-              </div>
+
 
               <Button onClick={sendEmail} disabled={emailing || !emailTo} className="w-full bg-purple-600 hover:bg-purple-700 text-white">
                 {emailing ? <Loader2 className="size-4 mr-2 animate-spin" /> : <Send className="size-4 mr-2" />}
